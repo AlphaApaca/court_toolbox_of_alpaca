@@ -1,3 +1,6 @@
+# 调度器模块，提供等待到指定时间的功能，适用于需要在特定时间点执行预订操作的场景
+# Scheduler module that provides functionality to wait until a specified time, suitable for scenarios where booking operations need to be executed at specific time points.
+
 import logging
 import time
 from datetime import datetime

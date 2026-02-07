@@ -1,3 +1,5 @@
+# 启动 Chrome，支持 user-data-dir/可复用 cookie 
+# Launch Chrome with support for user-data-dir/reusable cookies
 import logging
 from pathlib import Path
 

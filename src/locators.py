@@ -1,4 +1,5 @@
 # 将关键选择器集中管理，便于后续维护与回放
+# Centralized management of key selectors for easier maintenance and replay
 
 LOGIN_EMAIL = "input[type='email']"
 LOGIN_PASSWORD = "input[type='password']"

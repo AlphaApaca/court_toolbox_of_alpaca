@@ -1,3 +1,4 @@
+# 环境变量配置与校验 Environment variable configuration and validation
 import os
 from dataclasses import dataclass, field
 from typing import List

@@ -1,3 +1,6 @@
+# 预订流程核心逻辑，包含场馆选择、日期选择、时间槽选择和加入购物车等步骤
+# Core logic for the booking process, including venue selection, date selection, time slot selection,
+
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -21,7 +24,10 @@ def _wait_clickable(driver, locator: str, timeout: int):
 def compute_target_date(days_ahead: int) -> datetime:
     return datetime.now().date() + timedelta(days=days_ahead)
 
-
+# 这里其实不用用DOM来找venue，因为betteruk的URL里已经包含了venue的slug，直接访问对应URL即可。
+# 例如：
+# https://bookings.better.org.uk/location/sugden-sports-centre
+# https://bookings.better.org.uk/location/moss-side-leisure-centre
 def select_venue(driver, config: AppConfig) -> None:
     # 根据实际 DOM 调整选择器，目前为占位实现
     logger.info("选择场馆: %s", config.venue_name)
@@ -48,7 +54,8 @@ def open_target_date(driver, config: AppConfig, date_obj) -> None:
     except Exception:
         logger.debug("日期控件不可直接输入，后续需要补充具体点击逻辑")
 
-
+# 这里不是匹配时间，应该是匹配场地。应该不用选择具体的场地，直接选择不是Full的场地槽就行了
+# 场地如果是Full了，具体形式："FULL - "开头
 def pick_time_slot(driver, preferred_times, timeout: int) -> Optional[str]:
     WebDriverWait(driver, timeout).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, locators.TIME_SLOT))

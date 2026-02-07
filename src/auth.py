@@ -1,3 +1,5 @@
+# 登录及会话检测
+# Login and session detection
 import logging
 from typing import Optional
 
