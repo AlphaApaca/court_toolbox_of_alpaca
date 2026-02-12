@@ -6,13 +6,17 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+# 调试：指定一个已知可订的时间段（用来验证 slots 链路）
+FORCE_TEST_WINDOW = ("2026-02-16", "11:30", "12:30", "458f19d9")
+# 例子：("2026-02-09", "13:30", "14:30", "276d8515")
+
 BASE = "https://better-admin.org.uk"
 VENUE_SLUG = "sugden-sports-centre"
 ACTIVITY_SLUG = "badminton-60min"
 
 # 你的目标：工作日晚18:00以后，越晚越好，连续2小时（两个60min）
-TARGET_DATE = "2026-02-18"
-AFTER_TIME = "18:00"          # 起始时间阈值（含）
+TARGET_DATE = "2026-02-16"
+AFTER_TIME = "7:00"          # 起始时间阈值（含）
 REQUIRE_SAME_COURT = False    # True=两小时必须同一片场；False=两小时可换场
 
 DEBUG_DIR = os.path.join("debug", f"{VENUE_SLUG}_{ACTIVITY_SLUG}", TARGET_DATE)
@@ -33,7 +37,7 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
     "Origin": "https://bookings.better.org.uk",
-    "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-18/by-time",
+    "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-16/by-time",
     "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw"
 }
 
@@ -188,8 +192,20 @@ def find_best_two_hour_pair(
 
 
 def main():
+    if FORCE_TEST_WINDOW:
+        d, st, et, ck = FORCE_TEST_WINDOW
+        print(f"== FORCE TEST slots for {d} {st}-{et} key={ck} ==")
+        slots_json = get_slots(d, st, et, ck)
+        ok_slots = available_slots_from_slots_response(slots_json)
+        print(f"Available courts: {len(ok_slots)}")
+        for s in ok_slots[:10]:
+            print(f"  court={s['location']['name']}  location_id={s['location']['id']}  slot_id={s['id']}")
+        print(f"\nDebug JSON saved under: {DEBUG_DIR}")
+        return
+    
     ensure_dir(DEBUG_DIR)
     print(f"== Fetching times for {TARGET_DATE} ==")
+    
     times_json = get_times(TARGET_DATE)
     windows = build_time_windows(times_json)
 
