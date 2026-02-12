@@ -31,6 +31,8 @@ Robustness:
 每个场馆中，有多个羽毛球场地，但是不知道每天场官方会放出哪些时间段的羽毛球场地。
 但是我可以简单梳理一下我期望的预定逻辑。
 
+我刚发现了一个很诡异的事情，我在明天和后天都有别人拉我球局，但是网站上并没有显示出预定的时间段，而是返回空，说明空不一定是官方没有放出场地，也有可能是所有场地都已经被预定（但是为什么这个时候不显示full？还是说，显示full的时候并不是完全不可以预定，而是有人加入购物车之后还没有付款，所以显示full）anyway，我只要一直发送请求，读"times?date=xxxx"response里面的data信息就可以。
+
 ### 2. 预定逻辑实现
 
 如果工作日（周一到周五）能有晚上的场地，最好预定晚上的（18点以后，包含18点开始的）。
@@ -40,7 +42,7 @@ Robustness:
 
 ### 3. 两个预定时间不定放出
 
-并且，每个场馆（sugden和moss side）的可选预定时间都有两个badminton-60min和badminton-40min。对于badminton-60min，一般要订到至少连续的2h（两个预定），最多4h（四个预定）（如果后面有机会延续富贵杯）。对于badminton-40min，一般要订到连续的2h（三个预定）最多4h（六个预定）。最好有几个账号并行预定，
+并且，每个场馆（sugden和moss side）的可选预定时间都有两个badminton-60min和badminton-40min。对于badminton-60min，一般要订到至少连续的2h（两个预定），最多4h（四个预定）（如果后面有机会延续富贵杯）。对于badminton-40min，一般要订到连续的2h（三个预定）最多4h（六个预定）。最好有几个账号并行预定。
 
 ### 4. others
 
@@ -49,6 +51,18 @@ Robustness:
 ## JSON:
 
 Badminton60:
+
+Request URL: https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/categories/badminton-60min
+
+Request Method: GET
+
+Status Code: 200 OK
+
+Remote Address: 52.209.12.194:443
+
+Referrer Policy: no-referrer-when-downgrade
+
+Response JSON: 
 
 ```json
 {
@@ -174,6 +188,8 @@ Badminton60:
 
 Dates:
 
+
+
 ```json
 {
     "data": [
@@ -237,7 +253,19 @@ Dates:
 }
 ```
 
-times?date=2026-02-09:
+##### times?date=2026-02-09:
+
+Request URL: https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/activity/badminton-60min/v2/times?date=2026-02-09
+
+Request Method: GET
+
+Status Code: 200 OK
+
+Remote Address: 52.209.12.194:443
+
+Referrer Policy: no-referrer-when-downgrade
+
+Response JSON: 
 
 ```json
 {
@@ -431,7 +459,19 @@ times?date=2026-02-09:
 }
 ```
 
-slots?date=2026-02-09&start_time=13:30&end_time=14:30&composite_key=276d8515:
+##### slots?date=2026-02-09&start_time=13:30&end_time=14:30&composite_key=276d8515:
+
+Request URL: https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/activity/badminton-60min/v2/slots?date=2026-02-09&start_time=13:30&end_time=14:30&composite_key=276d8515
+
+Request Method: GET
+
+Status Code: 200 OK
+
+Remote Address: 52.209.12.194:443
+
+Referrer Policy: no-referrer-when-downgrade
+
+Response JSON: 
 
 ```json
 {
