@@ -12,11 +12,11 @@ LOGIN_SUBMIT = "button[type='submit']"
 # VENUE_RESULT_ITEM = "a"  # 需根据实际 DOM 调整
 
 # 日期/时间槽
-DATE_PICKER = "button[data-qa='date-picker'], input[type='date']"
-TIME_SLOT = "button[data-qa='timeslot'], button[data-qa='book-slot'], .timeslot"
+# DATE_PICKER = "button[data-qa='date-picker'], input[type='date']"
+# TIME_SLOT = "button[data-qa='timeslot'], button[data-qa='book-slot'], .timeslot"
 
-# 时间
-
+# 时间序列
+TIME_SLOT= "div[class='ClassCardComponent__ClassTime-sc-1v7d176-3 jJrPSZ']"
 # 加入购物车
 ADD_TO_BASKET = "button[data-qa='add-to-basket'], button[data-qa='add-to-cart']"
 VIEW_BASKET = "a[href*='basket'], button[data-qa='view-basket']"
