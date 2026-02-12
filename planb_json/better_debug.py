@@ -19,14 +19,24 @@ DEBUG_DIR = os.path.join("debug", f"{VENUE_SLUG}_{ACTIVITY_SLUG}", TARGET_DATE)
 
 # 如果接口需要登录态，最常见是 Cookie 或 Authorization
 # 你可以从浏览器 Network 里复制 Request Headers 里的 Cookie/Authorization 填进来
+# HEADERS = {
+#     "Accept": "application/json, text/plain, */*",
+#     "User-Agent": "Mozilla/5.0",
+#     "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw",
+#     # "Cookie": "....",
+#     "Referer": "https://better-admin.org.uk/",
+#     # "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-18/by-time",
+#     # https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/activity/badminton-60min/v2/times?date=2026-02-18
+# }
 HEADERS = {
-    "Accept": "application/json, text/plain, */*",
-    "User-Agent": "Mozilla/5.0",
-    "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw",
-    # "Cookie": "....",
-    # "Referer": "https://better-admin.org.uk/",
-    "Referer": "https://bookings.better.org.uk/location/moss-side-leisure-centre/badminton-60min/2026-02-18/by-time",
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+    "Origin": "https://bookings.better.org.uk",
+    "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-18/by-time",
+    "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw"
 }
+
 
 TIMEOUT = 20
 
@@ -54,18 +64,29 @@ def minutes_to_hm(minutes: int) -> str:
     m = minutes % 60
     return f"{h:02d}:{m:02d}"
 
-
 def get_times(date_str: str) -> Dict[str, Any]:
     url = f"{BASE}/api/activities/venue/{VENUE_SLUG}/activity/{ACTIVITY_SLUG}/v2/times"
     params = {"date": date_str}
     r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+
+    # 无论成功失败都先保存，便于排查
     try:
         data = r.json()
     except Exception:
-        data = {"_raw_text": r.text, "_status_code": r.status_code}
-    save_json("times_response", {"url": r.url, "status": r.status_code, "json": data})
-    r.raise_for_status()
+        data = {"_raw_text": r.text}
+
+    save_json("times_response", {"url": r.url, "status": r.status_code, "headers": dict(r.headers), "json": data})
+
+    if r.status_code != 200:
+        print(f"[times] HTTP {r.status_code} for {r.url}")
+        # 打印一小段响应体（不要太长）
+        snippet = (r.text or "")[:500]
+        print(f"[times] body snippet: {snippet!r}")
+        # 这里先不 raise，让主流程更可控
+        return {"data": [], "_error": {"status": r.status_code, "url": r.url, "body_snippet": snippet}}
+
     return data
+
 
 
 def get_slots(date_str: str, start_hm: str, end_hm: str, composite_key: str) -> Dict[str, Any]:

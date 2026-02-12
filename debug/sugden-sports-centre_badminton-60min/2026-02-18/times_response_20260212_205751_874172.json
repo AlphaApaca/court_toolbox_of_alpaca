@@ -1,0 +1,482 @@
+{
+  "url": "https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/activity/badminton-60min/v2/times?date=2026-02-18",
+  "status": 200,
+  "headers": {
+    "Content-Type": "application/json",
+    "Transfer-Encoding": "chunked",
+    "Connection": "keep-alive",
+    "Cache-Control": "no-cache, private",
+    "Date": "Thu, 12 Feb 2026 20:57:51 GMT",
+    "X-RateLimit-Limit": "3000",
+    "X-RateLimit-Remaining": "2999",
+    "X-Request-ID": "c9013458014db2e94f1e0737896e85cb",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Content-Security-Policy": "frame-ancestors 'self' https://*.better.org.uk https://*.opayo.eu.elavon.com",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Client-Domain-Identifier,Origin,X-User-Identifier,X-Selected-User-Identifier,X-Checkout-Auth",
+    "Access-Control-Max-Age": "1728000"
+  },
+  "json": {
+    "data": [
+      {
+        "starts_at": {
+          "format_12_hour": "07:30am",
+          "format_24_hour": "07:30"
+        },
+        "ends_at": {
+          "format_12_hour": "08:30am",
+          "format_24_hour": "08:30"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£5.00"
+        },
+        "composite_key": "b4cfe428",
+        "timestamp": 1771399800,
+        "booking": {
+          "id": 591625,
+          "booking_expires_at": {
+            "raw": "2026-02-18",
+            "raw_pretty": "18/02/2026",
+            "day_pretty": "Wed",
+            "date_pretty": "18 Feb",
+            "full_date_pretty": "Wed 18 February 2026",
+            "full_date": "18 February 2026",
+            "difference": "5 days from now",
+            "tz": "UTC"
+          },
+          "can_be_cancelled": true,
+          "status": "settled",
+          "cancellation_cutoff": {
+            "is_after_cutoff": false,
+            "cutoff_action": [
+              "charge_fee",
+              "disable_booking",
+              "disable_access"
+            ],
+            "cutoff_message": null
+          },
+          "attended": false,
+          "awards_credit": {
+            "can_be_awarded": true,
+            "message": null
+          },
+          "item": {
+            "duration": "1h",
+            "date": {
+              "raw": "2026-02-18",
+              "raw_pretty": "18/02/2026",
+              "day_pretty": "Wed",
+              "date_pretty": "18 Feb",
+              "full_date_pretty": "Wed 18 February 2026",
+              "full_date": "18 February 2026",
+              "difference": "5 days from now",
+              "tz": "Europe/London"
+            },
+            "starts_at": {
+              "format_12_hour": "7:30am",
+              "format_24_hour": "07:30"
+            },
+            "ends_at": {
+              "format_12_hour": "8:30am",
+              "format_24_hour": "08:30"
+            },
+            "location": {
+              "id": 5058,
+              "name": "Hall D, Crt 8",
+              "type": "resource",
+              "slug": "hall-d-crt-8",
+              "venue_id": 90266,
+              "venue_slug": "sugden-sports-centre"
+            }
+          },
+          "category": "Badminton 60min",
+          "venue": "Sugden Sports Centre",
+          "venue_type": "Leisure Centre",
+          "simple_name": "Badminton 60min",
+          "isV2": true
+        },
+        "action_to_show": {
+          "status": "CANCEL_BOOKING",
+          "reason": null
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 3,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "08:30am",
+          "format_24_hour": "08:30"
+        },
+        "ends_at": {
+          "format_12_hour": "09:30am",
+          "format_24_hour": "09:30"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£5.00"
+        },
+        "composite_key": "ee94dc6f",
+        "timestamp": 1771403400,
+        "booking": {
+          "id": 591646,
+          "booking_expires_at": {
+            "raw": "2026-02-18",
+            "raw_pretty": "18/02/2026",
+            "day_pretty": "Wed",
+            "date_pretty": "18 Feb",
+            "full_date_pretty": "Wed 18 February 2026",
+            "full_date": "18 February 2026",
+            "difference": "5 days from now",
+            "tz": "UTC"
+          },
+          "can_be_cancelled": true,
+          "status": "settled",
+          "cancellation_cutoff": {
+            "is_after_cutoff": false,
+            "cutoff_action": [
+              "charge_fee",
+              "disable_booking",
+              "disable_access"
+            ],
+            "cutoff_message": null
+          },
+          "attended": false,
+          "awards_credit": {
+            "can_be_awarded": true,
+            "message": null
+          },
+          "item": {
+            "duration": "1h",
+            "date": {
+              "raw": "2026-02-18",
+              "raw_pretty": "18/02/2026",
+              "day_pretty": "Wed",
+              "date_pretty": "18 Feb",
+              "full_date_pretty": "Wed 18 February 2026",
+              "full_date": "18 February 2026",
+              "difference": "5 days from now",
+              "tz": "Europe/London"
+            },
+            "starts_at": {
+              "format_12_hour": "8:30am",
+              "format_24_hour": "08:30"
+            },
+            "ends_at": {
+              "format_12_hour": "9:30am",
+              "format_24_hour": "09:30"
+            },
+            "location": {
+              "id": 5058,
+              "name": "Hall D, Crt 8",
+              "type": "resource",
+              "slug": "hall-d-crt-8",
+              "venue_id": 90266,
+              "venue_slug": "sugden-sports-centre"
+            }
+          },
+          "category": "Badminton 60min",
+          "venue": "Sugden Sports Centre",
+          "venue_type": "Leisure Centre",
+          "simple_name": "Badminton 60min",
+          "isV2": true
+        },
+        "action_to_show": {
+          "status": "CANCEL_BOOKING",
+          "reason": null
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "09:00am",
+          "format_24_hour": "09:00"
+        },
+        "ends_at": {
+          "format_12_hour": "10:00am",
+          "format_24_hour": "10:00"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£5.00"
+        },
+        "composite_key": "a57bca91",
+        "timestamp": 1771405200,
+        "booking": null,
+        "action_to_show": {
+          "status": null,
+          "reason": "You have already booked a session for this time, please select a different time"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 3,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "09:30am",
+          "format_24_hour": "09:30"
+        },
+        "ends_at": {
+          "format_12_hour": "10:30am",
+          "format_24_hour": "10:30"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£5.00"
+        },
+        "composite_key": "eec4d8fc",
+        "timestamp": 1771407000,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "10:30am",
+          "format_24_hour": "10:30"
+        },
+        "ends_at": {
+          "format_12_hour": "11:30am",
+          "format_24_hour": "11:30"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£9.00"
+        },
+        "composite_key": "176e7fb2",
+        "timestamp": 1771410600,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "12:00pm",
+          "format_24_hour": "12:00"
+        },
+        "ends_at": {
+          "format_12_hour": "01:00pm",
+          "format_24_hour": "13:00"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£9.00"
+        },
+        "composite_key": "7a34ed3f",
+        "timestamp": 1771416000,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "01:00pm",
+          "format_24_hour": "13:00"
+        },
+        "ends_at": {
+          "format_12_hour": "02:00pm",
+          "format_24_hour": "14:00"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£9.00"
+        },
+        "composite_key": "6124122e",
+        "timestamp": 1771419600,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "02:00pm",
+          "format_24_hour": "14:00"
+        },
+        "ends_at": {
+          "format_12_hour": "03:00pm",
+          "format_24_hour": "15:00"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£9.00"
+        },
+        "composite_key": "06138997",
+        "timestamp": 1771423200,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      },
+      {
+        "starts_at": {
+          "format_12_hour": "03:00pm",
+          "format_24_hour": "15:00"
+        },
+        "ends_at": {
+          "format_12_hour": "04:00pm",
+          "format_24_hour": "16:00"
+        },
+        "duration": "60min",
+        "price": {
+          "is_estimated": true,
+          "formatted_amount": "£9.00"
+        },
+        "composite_key": "416ab2fe",
+        "timestamp": 1771426800,
+        "booking": null,
+        "action_to_show": {
+          "status": "FULL",
+          "reason": "The session being booked is already full"
+        },
+        "category_slug": "badminton-60min",
+        "date": "2026-02-18",
+        "venue_slug": "sugden-sports-centre",
+        "location": "Multiple",
+        "spaces": 0,
+        "name": "Badminton 60min",
+        "allows_anonymous_bookings": false,
+        "restrictions": {
+          "pre_waiver": null,
+          "pre_induction": null,
+          "criteria": null
+        },
+        "has_pre_purchase_restrictions": false,
+        "requires_induction": false,
+        "restriction_ids": []
+      }
+    ]
+  }
+}
