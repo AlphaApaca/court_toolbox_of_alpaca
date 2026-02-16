@@ -7,31 +7,20 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 # 调试：指定一个已知可订的时间段（用来验证 slots 链路）
-FORCE_TEST_WINDOW = ("2026-02-16", "11:30", "12:30", "458f19d9")
-# 例子：("2026-02-09", "13:30", "14:30", "276d8515")
+FORCE_TEST_WINDOW = None
+# FORCE_TEST_WINDOW = ("2026-02-16", "11:30", "12:30", "458f19d9")
 
 BASE = "https://better-admin.org.uk"
 VENUE_SLUG = "sugden-sports-centre"
 ACTIVITY_SLUG = "badminton-60min"
 
 # 你的目标：工作日晚18:00以后，越晚越好，连续2小时（两个60min）
-TARGET_DATE = "2026-02-16"
+TARGET_DATE = "2026-02-20"
 AFTER_TIME = "7:00"          # 起始时间阈值（含）
 REQUIRE_SAME_COURT = False    # True=两小时必须同一片场；False=两小时可换场
 
 DEBUG_DIR = os.path.join("debug", f"{VENUE_SLUG}_{ACTIVITY_SLUG}", TARGET_DATE)
 
-# 如果接口需要登录态，最常见是 Cookie 或 Authorization
-# 你可以从浏览器 Network 里复制 Request Headers 里的 Cookie/Authorization 填进来
-# HEADERS = {
-#     "Accept": "application/json, text/plain, */*",
-#     "User-Agent": "Mozilla/5.0",
-#     "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw",
-#     # "Cookie": "....",
-#     "Referer": "https://better-admin.org.uk/",
-#     # "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-18/by-time",
-#     # https://better-admin.org.uk/api/activities/venue/sugden-sports-centre/activity/badminton-60min/v2/times?date=2026-02-18
-# }
 HEADERS = {
     "Accept": "application/json",
     "Accept-Language": "en-US,en;q=0.9",
@@ -121,6 +110,30 @@ def available_slots_from_slots_response(slots_json: Dict[str, Any]) -> List[Dict
             ok.append(s)
     return ok
 
+# def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+#     windows = []
+#     for item in times_json.get("data", []) or []:
+#         start_hm = item["starts_at"]["format_24_hour"]
+#         end_hm = item["ends_at"]["format_24_hour"]
+#         status = (item.get("action_to_show") or {}).get("status")
+
+#         if status != "BOOK":
+#             continue
+
+#         windows.append({
+#             "start": start_hm,
+#             "end": end_hm,
+#             "start_min": hm_to_minutes(start_hm),
+#             "end_min": hm_to_minutes(end_hm),
+#             "composite_key": item.get("composite_key"),
+#             "time_spaces": item.get("spaces", None),  # 仅记录，不作为过滤条件
+#             "raw": item,
+#         })
+
+#     after_min = hm_to_minutes(AFTER_TIME)
+#     windows = [w for w in windows if w["start_min"] >= after_min]
+#     windows.sort(key=lambda x: x["start_min"])
+#     return windows
 
 def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     windows = []
@@ -145,6 +158,7 @@ def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     # 按时间排序
     windows.sort(key=lambda x: x["start_min"])
     return windows
+
 
 
 def find_best_two_hour_pair(
@@ -192,6 +206,7 @@ def find_best_two_hour_pair(
 
 
 def main():
+    # 以下逻辑是已知date，start time, end time, composite key下测试获取指定预定框的所有slots
     if FORCE_TEST_WINDOW:
         d, st, et, ck = FORCE_TEST_WINDOW
         print(f"== FORCE TEST slots for {d} {st}-{et} key={ck} ==")
