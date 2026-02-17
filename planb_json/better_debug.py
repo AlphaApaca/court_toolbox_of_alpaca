@@ -15,8 +15,8 @@ VENUE_SLUG = "sugden-sports-centre"
 ACTIVITY_SLUG = "badminton-60min"
 
 # 你的目标：工作日晚18:00以后，越晚越好，连续2小时（两个60min）
-TARGET_DATE = "2026-02-20"
-AFTER_TIME = "7:00"          # 起始时间阈值（含）
+TARGET_DATE = "2026-02-23"
+AFTER_TIME = "14:30"          # 起始时间阈值（含）
 REQUIRE_SAME_COURT = False    # True=两小时必须同一片场；False=两小时可换场
 
 DEBUG_DIR = os.path.join("debug", f"{VENUE_SLUG}_{ACTIVITY_SLUG}", TARGET_DATE)
@@ -29,9 +29,10 @@ HEADERS = {
     "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-16/by-time",
     "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw"
 }
+MEMBERSHIP_USER_ID = 4620321
 
 
-TIMEOUT = 20
+TIMEOUT = 60
 
 
 def ensure_dir(path: str) -> None:
@@ -110,54 +111,54 @@ def available_slots_from_slots_response(slots_json: Dict[str, Any]) -> List[Dict
             ok.append(s)
     return ok
 
-# def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
-#     windows = []
-#     for item in times_json.get("data", []) or []:
-#         start_hm = item["starts_at"]["format_24_hour"]
-#         end_hm = item["ends_at"]["format_24_hour"]
-#         status = (item.get("action_to_show") or {}).get("status")
-
-#         if status != "BOOK":
-#             continue
-
-#         windows.append({
-#             "start": start_hm,
-#             "end": end_hm,
-#             "start_min": hm_to_minutes(start_hm),
-#             "end_min": hm_to_minutes(end_hm),
-#             "composite_key": item.get("composite_key"),
-#             "time_spaces": item.get("spaces", None),  # 仅记录，不作为过滤条件
-#             "raw": item,
-#         })
-
-#     after_min = hm_to_minutes(AFTER_TIME)
-#     windows = [w for w in windows if w["start_min"] >= after_min]
-#     windows.sort(key=lambda x: x["start_min"])
-#     return windows
-
 def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     windows = []
     for item in times_json.get("data", []) or []:
         start_hm = item["starts_at"]["format_24_hour"]
         end_hm = item["ends_at"]["format_24_hour"]
         status = (item.get("action_to_show") or {}).get("status")
-        spaces = item.get("spaces", 0)
-        if status == "BOOK" and spaces and spaces > 0:
-            windows.append({
-                "start": start_hm,
-                "end": end_hm,
-                "start_min": hm_to_minutes(start_hm),
-                "end_min": hm_to_minutes(end_hm),
-                "composite_key": item.get("composite_key"),
-                "spaces": spaces,
-                "raw": item,
-            })
-    # 只保留 18:00 之后
+
+        if status != "BOOK":
+            continue
+
+        windows.append({
+            "start": start_hm,
+            "end": end_hm,
+            "start_min": hm_to_minutes(start_hm),
+            "end_min": hm_to_minutes(end_hm),
+            "composite_key": item.get("composite_key"),
+            "spaces": item.get("spaces", None),
+            "raw": item,
+        })
+
     after_min = hm_to_minutes(AFTER_TIME)
     windows = [w for w in windows if w["start_min"] >= after_min]
-    # 按时间排序
     windows.sort(key=lambda x: x["start_min"])
     return windows
+
+# def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+#     windows = []
+#     for item in times_json.get("data", []) or []:
+#         start_hm = item["starts_at"]["format_24_hour"]
+#         end_hm = item["ends_at"]["format_24_hour"]
+#         status = (item.get("action_to_show") or {}).get("status")
+#         spaces = item.get("spaces", 0)
+#         if status == "BOOK" and spaces and spaces > 0:
+#             windows.append({
+#                 "start": start_hm,
+#                 "end": end_hm,
+#                 "start_min": hm_to_minutes(start_hm),
+#                 "end_min": hm_to_minutes(end_hm),
+#                 "composite_key": item.get("composite_key"),
+#                 "spaces": spaces,
+#                 "raw": item,
+#             })
+#     # 只保留 18:00 之后
+#     after_min = hm_to_minutes(AFTER_TIME)
+#     windows = [w for w in windows if w["start_min"] >= after_min]
+#     # 按时间排序
+#     windows.sort(key=lambda x: x["start_min"])
+#     return windows
 
 
 
@@ -203,6 +204,54 @@ def find_best_two_hour_pair(
     # “越晚越好”：选起始时间最晚的组合
     candidates.sort(key=lambda t: t[0]["start_min"], reverse=True)
     return candidates[0]
+
+def cart_add(
+    slot_id: str,
+    pricing_option_id: int,
+    membership_user_id: int,
+    apply_benefit: bool = True,
+    selected_user_id=None,
+    activity_restriction_ids=None,
+) -> Dict[str, Any]:
+    if activity_restriction_ids is None:
+        activity_restriction_ids = []
+
+    url = f"{BASE}/api/activities/cart/add"
+    payload = {
+        "items": [{
+            "id": slot_id,
+            "type": "purchasableOccurrence",
+            "pricing_option_id": pricing_option_id,
+            "apply_benefit": apply_benefit,
+            "activity_restriction_ids": activity_restriction_ids,
+        }],
+        "membership_user_id": membership_user_id,
+        "selected_user_id": selected_user_id,
+    }
+
+    r = requests.post(url, json=payload, headers=HEADERS, timeout=TIMEOUT)
+
+    # 保存响应方便 debug
+    try:
+        data = r.json()
+    except Exception:
+        data = {"_raw_text": r.text}
+
+    save_json("cart_add_response", {
+        "url": r.url,
+        "status": r.status_code,
+        "request_payload": payload,
+        "response_headers": dict(r.headers),
+        "json": data,
+    })
+
+    # 失败时也打印信息
+    if r.status_code != 200:
+        print(f"[cart_add] HTTP {r.status_code} for {r.url}")
+        print(f"[cart_add] body_snippet: {(r.text or '')[:800]!r}")
+        r.raise_for_status()
+
+    return data
 
 
 def main():
@@ -264,6 +313,38 @@ def main():
         print("Same-court constraint: satisfied.")
     else:
         print("Same-court constraint: not required (may switch courts).")
+
+    # print("\n== Add first slot to cart (test) ==")
+    # resp = cart_add(
+    #     slot_id=slot1["id"],
+    #     pricing_option_id=slot1["pricing_option_id"],
+    #     membership_user_id=MEMBERSHIP_USER_ID,
+    #     apply_benefit=True,
+    # )
+    # cart_uuid = resp.get("data", {}).get("uuid")
+    # print(f"Added to cart. cart_uuid={cart_uuid}")
+
+    print("\n== Add two-hour booking to cart ==")
+
+    resp1 = cart_add(
+        slot_id=slot1["id"],
+        pricing_option_id=slot1["pricing_option_id"],
+        membership_user_id=MEMBERSHIP_USER_ID,
+    )
+
+    resp2 = cart_add(
+        slot_id=slot2["id"],
+        pricing_option_id=slot2["pricing_option_id"],
+        membership_user_id=MEMBERSHIP_USER_ID,
+    )
+
+    cart1 = resp1.get("data", {})
+    cart2 = resp2.get("data", {})
+
+    print(f"Cart1 UUID: {cart1.get('uuid')}  items: {cart1.get('item_count')}")
+    print(f"Cart2 UUID: {cart2.get('uuid')}  items: {cart2.get('item_count')}")
+    print(f"Total after second add: {cart2.get('formattedTotal')}")
+
 
     print(f"\nDebug JSON saved under: {DEBUG_DIR}")
 

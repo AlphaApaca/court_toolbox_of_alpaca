@@ -1168,6 +1168,125 @@ Response JSON:
 }
 ```
 
+add:
+
+```powershell
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$session.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+Invoke-WebRequest -UseBasicParsing -Uri "https://better-admin.org.uk/api/activities/cart/add" `
+-Method "POST" `
+-WebSession $session `
+-Headers @{
+"authority"="better-admin.org.uk"
+  "method"="POST"
+  "path"="/api/activities/cart/add"
+  "scheme"="https"
+  "accept"="application/json"
+  "accept-encoding"="gzip, deflate, br, zstd"
+  "accept-language"="en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"
+  "authorization"="Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw"
+  "origin"="https://bookings.better.org.uk"
+  "priority"="u=1, i"
+  "referer"="https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-20/by-time/slot/07:30-08:30/956478f9"
+  "sec-ch-ua"="`"Google Chrome`";v=`"143`", `"Chromium`";v=`"143`", `"Not A(Brand`";v=`"24`""
+  "sec-ch-ua-mobile"="?0"
+  "sec-ch-ua-platform"="`"macOS`""
+  "sec-fetch-dest"="empty"
+  "sec-fetch-mode"="cors"
+  "sec-fetch-site"="cross-site"
+} `
+-ContentType "application/json" `
+-Body "{`"items`":[{`"id`":`"AQGbDtunTP1InFEHzkrYwLYEBgydlgabCA`",`"type`":`"purchasableOccurrence`",`"pricing_option_id`":992,`"apply_benefit`":true,`"activity_restriction_ids`":[]}],`"membership_user_id`":4620321,`"selected_user_id`":null}"
+```
+
+
+
+```json
+{
+    "data": {
+        "id": 107288259,
+        "source": "activity-booking",
+        "total": 500,
+        "formattedTotal": "\u00a35.00",
+        "balance": 500,
+        "formattedBalance": "\u00a35.00",
+        "item_count": 1,
+        "items": [
+            {
+                "id": 138365150,
+                "cartable_id": 621451,
+                "cartable_type": "av2Booking",
+                "parent_item_id": null,
+                "name": "Badminton 60min - Fri 20 Feb - 07:30",
+                "membership_user_id": 4620321,
+                "price": {
+                    "benefit_applied": false,
+                    "package_applied": false,
+                    "formatted": "\u00a35.00",
+                    "raw": 500
+                },
+                "user_friendly_type": "EloquentBooking",
+                "enable_print_receipt": false,
+                "cartable_resource": {
+                    "id": "AQGbDtunTP1InFEHzkrYwLYEBgydlgabCA",
+                    "name": "Badminton 60min",
+                    "duration": "1h",
+                    "venue_name": "Sugden Sports Centre",
+                    "location": {
+                        "id": "5052",
+                        "name": "Hall C, Crt 2",
+                        "type": "resource",
+                        "slug": "hall-c-crt-2",
+                        "venue_id": 90266,
+                        "venue_slug": "sugden-sports-centre"
+                    },
+                    "date": {
+                        "raw": "2026-02-20",
+                        "raw_pretty": "20\/02\/2026",
+                        "day_pretty": "Fri",
+                        "date_pretty": "20 Feb",
+                        "full_date_pretty": "Fri 20 February 2026",
+                        "full_date": "20 February 2026",
+                        "difference": "3 days from now",
+                        "tz": "Europe\/London"
+                    },
+                    "starts_at": {
+                        "format_12_hour": "7:30am",
+                        "format_24_hour": "07:30"
+                    },
+                    "ends_at": {
+                        "format_12_hour": "8:30am",
+                        "format_24_hour": "08:30"
+                    }
+                },
+                "sort_by": 0,
+                "quantity": 1,
+                "max_quantity": null,
+                "notes": [],
+                "child_items": [],
+                "promotion_code": null
+            }
+        ],
+        "payments": [],
+        "uuid": "2c2dee0a-a146-457b-a7ec-97c5345c78ac",
+        "credits": {
+            "membership": {
+                "type": "membership",
+                "total_available": 0,
+                "max_applicable": 0
+            },
+            "general": {
+                "type": "general",
+                "total_available": 0,
+                "max_applicable": 0
+            }
+        },
+        "attendeeWaiversRequired": false,
+        "itemHash": "MTM4MzY1MTUw"
+    }
+}
+```
+
 
 
 
