@@ -136,32 +136,6 @@ def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     windows.sort(key=lambda x: x["start_min"])
     return windows
 
-# def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
-#     windows = []
-#     for item in times_json.get("data", []) or []:
-#         start_hm = item["starts_at"]["format_24_hour"]
-#         end_hm = item["ends_at"]["format_24_hour"]
-#         status = (item.get("action_to_show") or {}).get("status")
-#         spaces = item.get("spaces", 0)
-#         if status == "BOOK" and spaces and spaces > 0:
-#             windows.append({
-#                 "start": start_hm,
-#                 "end": end_hm,
-#                 "start_min": hm_to_minutes(start_hm),
-#                 "end_min": hm_to_minutes(end_hm),
-#                 "composite_key": item.get("composite_key"),
-#                 "spaces": spaces,
-#                 "raw": item,
-#             })
-#     # 只保留 18:00 之后
-#     after_min = hm_to_minutes(AFTER_TIME)
-#     windows = [w for w in windows if w["start_min"] >= after_min]
-#     # 按时间排序
-#     windows.sort(key=lambda x: x["start_min"])
-#     return windows
-
-
-
 def find_best_two_hour_pair(
     windows: List[Dict[str, Any]],
     slots_by_start: Dict[str, List[Dict[str, Any]]],
@@ -255,21 +229,25 @@ def cart_add(
 
 
 def main():
-    # 以下逻辑是已知date，start time, end time, composite key下测试获取指定预定框的所有slots
-    if FORCE_TEST_WINDOW:
-        d, st, et, ck = FORCE_TEST_WINDOW
-        print(f"== FORCE TEST slots for {d} {st}-{et} key={ck} ==")
-        slots_json = get_slots(d, st, et, ck)
-        ok_slots = available_slots_from_slots_response(slots_json)
-        print(f"Available courts: {len(ok_slots)}")
-        for s in ok_slots[:10]:
-            print(f"  court={s['location']['name']}  location_id={s['location']['id']}  slot_id={s['id']}")
-        print(f"\nDebug JSON saved under: {DEBUG_DIR}")
-        return
+    # 以下逻辑是测试已知date，start time, end time, composite key下测试获取指定预定框的所有slots
+    # if FORCE_TEST_WINDOW:
+    #     d, st, et, ck = FORCE_TEST_WINDOW
+    #     print(f"== FORCE TEST slots for {d} {st}-{et} key={ck} ==")
+    #     slots_json = get_slots(d, st, et, ck)
+    #     ok_slots = available_slots_from_slots_response(slots_json)
+    #     print(f"Available courts: {len(ok_slots)}")
+    #     for s in ok_slots[:10]:
+    #         print(f"  court={s['location']['name']}  location_id={s['location']['id']}  slot_id={s['id']}")
+    #     print(f"\nDebug JSON saved under: {DEBUG_DIR}")
+    #     return
     
-    ensure_dir(DEBUG_DIR)
-    print(f"== Fetching times for {TARGET_DATE} ==")
+    # ensure_dir(DEBUG_DIR)
+    # print(f"== Fetching times for {TARGET_DATE} ==")
     
+    # ==========================================================================
+    # 获取期望日期（TARGET_DATE）的所有可用时间预定（time windows）
+    # 并过滤出起始时间在 AFTER_TIME 之后的（你想要工作日晚18:00后的）可用预定时间窗
+    # ==========================================================================
     times_json = get_times(TARGET_DATE)
     windows = build_time_windows(times_json)
 
@@ -278,7 +256,9 @@ def main():
         print("No available time windows after threshold.")
         return
 
+    # ==========================================================================
     # 逐个 time window 展开 slots
+    # ==========================================================================
     slots_by_start: Dict[str, List[Dict[str, Any]]] = {}
     for w in windows:
         ck = w["composite_key"]
@@ -288,6 +268,7 @@ def main():
         time.sleep(0.2)
         slots_json = get_slots(TARGET_DATE, w["start"], w["end"], ck)
         ok_slots = available_slots_from_slots_response(slots_json)
+        # 按起始时间聚合，方便后续找连续两小时
         slots_by_start[w["start"]] = ok_slots
 
         print(f"- {w['start']}-{w['end']}  key={ck}  time_spaces={w['spaces']}  available_courts={len(ok_slots)}")
@@ -298,12 +279,15 @@ def main():
                 sid = s["id"]
                 print(f"    court={loc}  slot_id={sid}")
 
+    # ==========================================================================
     # 找连续两小时（两个60min）
+    # ==========================================================================
     best = find_best_two_hour_pair(windows, slots_by_start, REQUIRE_SAME_COURT)
     if not best:
         print("\nNo 2-hour consecutive booking found after threshold.")
         print(f"(require_same_court={REQUIRE_SAME_COURT})")
         return
+    
 
     w1, w2, slot1, slot2 = best
     print("\n== Best 2-hour option (latest start) ==")
@@ -314,15 +298,7 @@ def main():
     else:
         print("Same-court constraint: not required (may switch courts).")
 
-    # print("\n== Add first slot to cart (test) ==")
-    # resp = cart_add(
-    #     slot_id=slot1["id"],
-    #     pricing_option_id=slot1["pricing_option_id"],
-    #     membership_user_id=MEMBERSHIP_USER_ID,
-    #     apply_benefit=True,
-    # )
-    # cart_uuid = resp.get("data", {}).get("uuid")
-    # print(f"Added to cart. cart_uuid={cart_uuid}")
+
 
     print("\n== Add two-hour booking to cart ==")
 
