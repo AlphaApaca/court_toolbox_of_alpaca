@@ -1,9 +1,32 @@
+import json
+import os
+import time
+import requests
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
-from planb_json.config import CONFIG
-from planb_json.better_debug import *
+from config import CONFIG
 
+BASE = "https://better-admin.org.uk"
+AFTER_TIME = "8:00"          # 起始时间阈值（含）
+TARGET_DATE = (datetime.now().date() + timedelta(days=7)).isoformat()
+
+HEADERS = {
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+    "Origin": "https://bookings.better.org.uk",
+    "Referer": "https://bookings.better.org.uk/location/sugden-sports-centre/badminton-60min/2026-02-16/by-time",
+    "Authorization": "Bearer v4.local.jLBnX3BI_OglWC6h5BDCUjTvNJIZ6upauBL27AXHDOKG5t5OcY5HkjpPOlEufvBZRGxc9yBh7slMS4EDGrVzxLO2v2yqrC8Gkfyvp4Jivt6YMbqZhSzvUwpQS7Lla1HKr4BqGclym7xortyqJLo1VIUJru91VfLJgzfZKMXZwGRTWqJAgVpf7Jf8Fnwezq_TO6BZzMqhIak7gnZ4hw"
+}
+MEMBERSHIP_USER_ID = 4620321
+
+TIMEOUT = 60
+
+# =================================================================
+# 0. Basic utils and data structures.
+# =================================================================
 
 def hm_to_min(hm: str) -> int:
     h, m = hm.split(":")
@@ -39,6 +62,141 @@ class BookingPlan:
     score: float
     reason: str
 
+
+# =================================================================
+# 1. API interaction and data parsing.
+# =================================================================
+
+def get_times(date_str: str, venue_slug: str, activity_slug: str) -> Dict[str, Any]:
+    url = f"{BASE}/api/activities/venue/{venue_slug}/activity/{activity_slug}/v2/times"
+    params = {"date": date_str}
+    r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+
+    # 无论成功失败都先保存，便于排查
+    try:
+        data = r.json()
+    except Exception:
+        data = {"_raw_text": r.text}
+
+    # save_json("times_response", {"url": r.url, "status": r.status_code, "headers": dict(r.headers), "json": data})
+
+    if r.status_code != 200:
+        print(f"[times] HTTP {r.status_code} for {r.url}")
+        # 打印一小段响应体（不要太长）
+        snippet = (r.text or "")[:500]
+        print(f"[times] body snippet: {snippet!r}")
+        # 这里先不 raise，让主流程更可控
+        return {"data": [], "_error": {"status": r.status_code, "url": r.url, "body_snippet": snippet}}
+
+    return data
+
+
+def get_slots(date_str: str, start_hm: str, end_hm: str, composite_key: str, venue_slug: str, activity_slug: str) -> Dict[str, Any]:
+    url = f"{BASE}/api/activities/venue/{venue_slug}/activity/{activity_slug}/v2/slots"
+    params = {
+        "date": date_str,
+        "start_time": start_hm,
+        "end_time": end_hm,
+        "composite_key": composite_key,
+    }
+    r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+    try:
+        data = r.json()
+    except Exception:
+        data = {"_raw_text": r.text, "_status_code": r.status_code}
+    # save_json(f"slots_{start_hm}_{end_hm}", {"url": r.url, "status": r.status_code, "json": data})
+    r.raise_for_status()
+    return data
+
+def available_slots_from_slots_response(slots_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+    slots = slots_json.get("data", []) or []
+    ok = []
+    for s in slots:
+        status = (s.get("action_to_show") or {}).get("status")
+        spaces = s.get("spaces", 0)
+        if status == "BOOK" and spaces and spaces > 0:
+            ok.append(s)
+    return ok
+
+def cart_add(
+    slot_id: str,
+    pricing_option_id: int,
+    membership_user_id: int,
+    apply_benefit: bool = True,
+    selected_user_id=None,
+    activity_restriction_ids=None,
+) -> Dict[str, Any]:
+    if activity_restriction_ids is None:
+        activity_restriction_ids = []
+
+    url = f"{BASE}/api/activities/cart/add"
+    payload = {
+        "items": [{
+            "id": slot_id,
+            "type": "purchasableOccurrence",
+            "pricing_option_id": pricing_option_id,
+            "apply_benefit": apply_benefit,
+            "activity_restriction_ids": activity_restriction_ids,
+        }],
+        "membership_user_id": membership_user_id,
+        "selected_user_id": selected_user_id,
+    }
+
+    r = requests.post(url, json=payload, headers=HEADERS, timeout=TIMEOUT)
+
+    # 保存响应方便 debug
+    try:
+        data = r.json()
+    except Exception:
+        data = {"_raw_text": r.text}
+
+    # save_json("cart_add_response", {
+    #     "url": r.url,
+    #     "status": r.status_code,
+    #     "request_payload": payload,
+    #     "response_headers": dict(r.headers),
+    #     "json": data,
+    # })
+
+    # 失败时也打印信息
+    if r.status_code != 200:
+        print(f"[cart_add] HTTP {r.status_code} for {r.url}")
+        print(f"[cart_add] body_snippet: {(r.text or '')[:800]!r}")
+        r.raise_for_status()
+
+    return data
+
+
+# =================================================================
+# 2. Data processing.
+# =================================================================
+
+def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+    windows = []
+    for item in times_json.get("data", []) or []:
+        start_hm = item["starts_at"]["format_24_hour"]
+        end_hm = item["ends_at"]["format_24_hour"]
+        status = (item.get("action_to_show") or {}).get("status")
+
+        if status != "BOOK":
+            continue
+
+        windows.append({
+            "start": start_hm,
+            "end": end_hm,
+            "start_min": hm_to_min(start_hm),
+            "end_min": hm_to_min(end_hm),
+            "composite_key": item.get("composite_key"),
+            "spaces": item.get("spaces", None),
+            "raw": item,
+        })
+
+    after_min = hm_to_min(AFTER_TIME)
+    windows = [w for w in windows if w["start_min"] >= after_min]
+    windows.sort(key=lambda x: x["start_min"])
+    return windows
+
+
 def build_candidates_from_slots_json(venue_slug: str, activity_slug: str, slots_json: dict) -> List[SlotCandidate]:
     out = []
     for s in slots_json.get("data", []) or []:
@@ -65,6 +223,38 @@ def build_candidates_from_slots_json(venue_slug: str, activity_slug: str, slots_
             location_name=s["location"]["name"],
         ))
     return out
+
+def summarize_times(times_json: Dict[str, Any], label: str):
+    data = times_json.get("data", []) or []
+    print(f"[{label}] total times returned: {len(data)}")
+    if not data:
+        # 可能是接口返回空
+        err = times_json.get("_error")
+        if err:
+            print(f"[{label}] error: {err}")
+        return
+
+    # 统计 status 分布
+    from collections import Counter
+    statuses = []
+    after_time = 0
+    after_time_book = 0
+    for t in data:
+        status = (t.get("action_to_show") or {}).get("status", "NONE")
+        statuses.append(status)
+        st = t["starts_at"]["format_24_hour"]
+        if hm_to_min(st) >= hm_to_min(AFTER_TIME):
+            after_time += 1
+            if status == "BOOK":
+                after_time_book += 1
+
+    c = Counter(statuses)
+    print(f"[{label}] status counts: {dict(c)}")
+    print(f"[{label}] times after {AFTER_TIME}: {after_time}, of which BOOK: {after_time_book}")
+
+# =================================================================
+# 3. Booking logic: Find contiguous blocks, design score method.
+# =================================================================
 
 def find_contiguous_blocks_per_court(
     cands: List[SlotCandidate],
@@ -107,6 +297,10 @@ def score_evening_plan(slots: List[SlotCandidate], prefer_latest_start: bool = T
     duration = sum(s.duration_min for s in slots)
     # 让“更晚开始”主导；同样晚开始时，更长略优
     return (start_min / 10.0) + (duration / 1000.0) if prefer_latest_start else (duration / 10.0)
+
+# =================================================================
+# 4. Build plans.
+# =================================================================
 
 def build_evening_plans_from_candidates(
     cands: List[SlotCandidate],
@@ -170,6 +364,10 @@ def build_evening_plans_from_candidates(
 
     return plans[:target_court_count]
 
+# =================================================================
+# 5. Execute booking.
+# =================================================================
+
 def execute_evening_plans(plans, membership_user_id, dry_run=False):
     if not plans:
         print("No valid evening plans found.")
@@ -200,58 +398,64 @@ def execute_evening_plans(plans, membership_user_id, dry_run=False):
               f"items={final_cart.get('item_count')}  "
               f"total={final_cart.get('formattedTotal')}")
         
-
+# =================================================================
+# 6. Main
+# =================================================================
+    
 def main():
-
-    candidates = []  # 收集所有 venue + 60/40 的 SlotCandidate
+    candidates: List[SlotCandidate] = []
 
     for venue in CONFIG["venues"]:
-        for activity in CONFIG["activities"]:
-            # 你已有的 times + slots 拉取逻辑
+        venue_slug = venue["slug"]
 
-            # ==========================================================================
-            # 获取期望日期（TARGET_DATE）的所有可用时间预定（time windows）
-            # 并过滤出起始时间在 AFTER_TIME 之后的（你想要工作日晚18:00后的）可用预定时间窗
-            # ==========================================================================
-            times_json = get_times(TARGET_DATE)
+        for activity in CONFIG["activities"]:
+            activity_slug = activity["slug"]
+
+            # 1) times -> windows
+            times_json = get_times(TARGET_DATE, venue_slug, activity_slug)
+            # summarize_times(times_json, f"{venue_slug}|{activity_slug}")
             windows = build_time_windows(times_json)
 
-            print(f"Times windows after {AFTER_TIME} (status=BOOK, spaces>0): {len(windows)}")
+            print(f"\n== {venue_slug} | {activity_slug} ==")
+            print(f"Time windows after {AFTER_TIME} (status=BOOK): {len(windows)}")
             if not windows:
-                print("No available time windows after threshold.")
-                return
+                print("No available time windows after threshold for this venue/activity.")
+                continue
 
-            # ==========================================================================
-            # 逐个 time window 展开 slots
-            # ==========================================================================
-            slots_by_start: Dict[str, List[Dict[str, Any]]] = {}
+            # 2) windows -> slots -> candidates
             for w in windows:
-                ck = w["composite_key"]
+                ck = w.get("composite_key")
                 if not ck:
                     continue
-                # 轻微节流，避免太密集
-                time.sleep(0.2)
-                slots_json = get_slots(TARGET_DATE, w["start"], w["end"], ck)
-                ok_slots = available_slots_from_slots_response(slots_json)
-                # 按起始时间聚合，方便后续找连续两小时
-                slots_by_start[w["start"]] = ok_slots
 
-                print(f"- {w['start']}-{w['end']}  key={ck}  time_spaces={w['spaces']}  available_courts={len(ok_slots)}")
-                if ok_slots:
-                    # 打印前3个可订场地，方便你看
-                    for s in ok_slots[:3]:
-                        loc = s["location"]["name"]
-                        sid = s["id"]
-                        print(f"    court={loc}  slot_id={sid}")
-    
-            # 每个 slots_json 调 build_candidates_from_slots_json()
-            candidates.extend(build_candidates_from_slots_json(CONFIG.venue, CONFIG.activities, slots_json))  # to be filled with actual params.
+                time.sleep(0.2)
+                slots_json = get_slots(
+                    TARGET_DATE,
+                    w["start"],
+                    w["end"],
+                    ck,
+                    venue_slug,
+                    activity_slug
+                )
+
+                # 打印一下该窗口可订场数（可留可删）
+                ok_slots = available_slots_from_slots_response(slots_json)
+                print(f"- {w['start']}-{w['end']} key={ck} available_courts={len(ok_slots)}")
+
+                # ✅ 关键：用原始 slots_json 构建 candidates
+                candidates.extend(build_candidates_from_slots_json(
+                    venue_slug=venue_slug,
+                    activity_slug=activity_slug,
+                    slots_json=slots_json
+                ))
+
+    print(f"\nTotal candidates collected: {len(candidates)}")
 
     plans = build_evening_plans_from_candidates(
         cands=candidates,
         min_contig_min=120,
-        after_time="18:00",
-        take_all=True,             # B 模式
+        after_time=AFTER_TIME,
+        take_all=True,             # B 模式：整段拿
         target_court_count=None,   # 不限制数量
         prefer_latest_start=True,
     )
@@ -261,9 +465,6 @@ def main():
         membership_user_id=MEMBERSHIP_USER_ID,
         dry_run=False,
     )
-    
-
 
 if __name__ == "__main__":
     main()
-
