@@ -9,7 +9,7 @@ from collections import defaultdict
 from config import CONFIG
 
 BASE = "https://better-admin.org.uk"
-AFTER_TIME = "8:00"          # 起始时间阈值（含）
+AFTER_TIME = "18:00"          # 起始时间阈值（含）
 TARGET_DATE = (datetime.now().date() + timedelta(days=7)).isoformat()
 
 HEADERS = {
@@ -72,13 +72,10 @@ def get_times(date_str: str, venue_slug: str, activity_slug: str) -> Dict[str, A
     params = {"date": date_str}
     r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
 
-    # 无论成功失败都先保存，便于排查
     try:
         data = r.json()
     except Exception:
         data = {"_raw_text": r.text}
-
-    # save_json("times_response", {"url": r.url, "status": r.status_code, "headers": dict(r.headers), "json": data})
 
     if r.status_code != 200:
         print(f"[times] HTTP {r.status_code} for {r.url}")
@@ -104,7 +101,6 @@ def get_slots(date_str: str, start_hm: str, end_hm: str, composite_key: str, ven
         data = r.json()
     except Exception:
         data = {"_raw_text": r.text, "_status_code": r.status_code}
-    # save_json(f"slots_{start_hm}_{end_hm}", {"url": r.url, "status": r.status_code, "json": data})
     r.raise_for_status()
     return data
 
@@ -191,6 +187,7 @@ def build_time_windows(times_json: Dict[str, Any]) -> List[Dict[str, Any]]:
             "raw": item,
         })
 
+    # 只保留 start 在 AFTER_TIME 之后的窗口，并按 start 升序排序
     after_min = hm_to_min(AFTER_TIME)
     windows = [w for w in windows if w["start_min"] >= after_min]
     windows.sort(key=lambda x: x["start_min"])
@@ -256,6 +253,7 @@ def summarize_times(times_json: Dict[str, Any], label: str):
 # 3. Booking logic: Find contiguous blocks, design score method.
 # =================================================================
 
+# 找连续块的这个算法有问题。具体在chat里面。
 def find_contiguous_blocks_per_court(
     cands: List[SlotCandidate],
     after_min: int,
@@ -275,7 +273,7 @@ def find_contiguous_blocks_per_court(
         cur = []
         for s in items:
             if not cur:
-                cur = [s]
+                cur = [s] #初始化currunt
             else:
                 prev = cur[-1]
                 # 连续判定：上一段 end == 下一段 start
@@ -289,6 +287,7 @@ def find_contiguous_blocks_per_court(
         blocks_by_court[cid] = blocks
     return blocks_by_court
 
+# 评分函数：晚上越晚开始越好；如果你也想更长优先，可以再加 duration 权重
 def score_evening_plan(slots: List[SlotCandidate], prefer_latest_start: bool = True) -> float:
     """
     晚上：越晚开始越好；如果你也想更长优先，可以再加 duration 权重
@@ -428,7 +427,7 @@ def main():
                 if not ck:
                     continue
 
-                time.sleep(0.2)
+                time.sleep(0.2) # 避免请求过快被封（可以根据实际情况调整），我想删掉说实话
                 slots_json = get_slots(
                     TARGET_DATE,
                     w["start"],
