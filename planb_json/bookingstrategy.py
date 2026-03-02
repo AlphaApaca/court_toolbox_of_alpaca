@@ -9,8 +9,9 @@ from collections import defaultdict
 from config import CONFIG
 
 BASE = "https://better-admin.org.uk"
-AFTER_TIME = "18:00"          # 起始时间阈值（含）
+AFTER_TIME = "7:00"          # 起始时间阈值（含）
 TARGET_DATE = (datetime.now().date() + timedelta(days=7)).isoformat()
+# TARGET_DATE = "2026-03-06"  # 固定日期，测试用
 
 HEADERS = {
     "Accept": "application/json",
@@ -287,6 +288,7 @@ def find_contiguous_blocks_per_court(
         blocks_by_court[cid] = blocks
     return blocks_by_court
 
+# 相当于是用赋值评分的方式处理时间选择的优先级；会有什么问题？需要再考虑。
 # 评分函数：晚上越晚开始越好；如果你也想更长优先，可以再加 duration 权重
 def score_evening_plan(slots: List[SlotCandidate], prefer_latest_start: bool = True) -> float:
     """
@@ -303,7 +305,7 @@ def score_evening_plan(slots: List[SlotCandidate], prefer_latest_start: bool = T
 
 def build_evening_plans_from_candidates(
     cands: List[SlotCandidate],
-    min_contig_min: int,
+    min_contig_min: int, # 连续块的最小总时长（分钟），比如 120
     after_time: str,
     take_all: bool,
     target_court_count: Optional[int],
@@ -340,6 +342,7 @@ def build_evening_plans_from_candidates(
                 chosen.reverse()
                 reason = f"take_exact {need}min from latest"
 
+            # 这两行是评分系统，目前还没太探索出来实际实现原理先放这里，后续再改。
             score = score_evening_plan(chosen, prefer_latest_start=prefer_latest_start)
             total_price = sum(s.price_pence for s in chosen)
             plans.append(BookingPlan(
@@ -357,7 +360,7 @@ def build_evening_plans_from_candidates(
     # 晚上优先：分数高（更晚）排前
     plans.sort(key=lambda p: p.score, reverse=True)
 
-    # 如果 take_all=True 且 target_court_count=None：就返回全部“满足>=2h”的场
+    # 如果 take_all=True 且 target_court_count=None：就返回全部“满足>={min_contig_min}”的场
     if target_court_count is None:
         return plans if take_all else plans[:1]
 
@@ -367,12 +370,12 @@ def build_evening_plans_from_candidates(
 # 5. Execute booking.
 # =================================================================
 
-def execute_evening_plans(plans, membership_user_id, dry_run=False):
+def execute_evening_plans(plans, membership_user_id, dry_run=False, min_contig_min=None):
     if not plans:
         print("No valid evening plans found.")
         return
 
-    print(f"\n== Found {len(plans)} qualifying courts (>=2h) ==")
+    print(f"\n== Found {len(plans)} qualifying courts (>={min_contig_min}min) ==")
 
     for idx, plan in enumerate(plans, 1):
         print(f"\n[{idx}] {plan.venue_slug} | {plan.location_name}")
@@ -398,7 +401,58 @@ def execute_evening_plans(plans, membership_user_id, dry_run=False):
               f"total={final_cart.get('formattedTotal')}")
         
 # =================================================================
-# 6. Main
+# 6. Release-mode: Polling for availability and auto-booking.
+# =================================================================
+
+def run_release_mode(
+    duration_seconds: int = 30,
+    poll_interval: float = 0.8,
+    dry_run: bool = False,
+):
+    deadline = time.time() + duration_seconds
+    last_found = 0
+
+    while time.time() < deadline:
+        candidates: List[SlotCandidate] = []
+
+        for venue in CONFIG["venues"]:
+            venue_slug = venue["slug"]
+            for activity in CONFIG["activities"]:
+                activity_slug = activity["slug"]
+
+                times_json = get_times(TARGET_DATE, venue_slug, activity_slug)
+                windows = build_time_windows(times_json)
+
+                for w in windows:
+                    ck = w.get("composite_key")
+                    if not ck:
+                        continue
+                    slots_json = get_slots(TARGET_DATE, w["start"], w["end"], ck, venue_slug, activity_slug)
+                    candidates.extend(build_candidates_from_slots_json(venue_slug, activity_slug, slots_json))
+
+        if candidates:
+            last_found = len(candidates)
+
+        plans = build_evening_plans_from_candidates(
+            cands=candidates,
+            min_contig_min=120,
+            after_time=AFTER_TIME,
+            take_all=True,
+            target_court_count=None,
+            prefer_latest_start=True,
+        )
+
+        if plans:
+            print(f"\n✅ Found {len(plans)} qualifying 2h+ courts. Executing...")
+            execute_evening_plans(plans, membership_user_id=MEMBERSHIP_USER_ID, dry_run=dry_run)
+            return
+
+        print(f"[poll] candidates={last_found}  plans=0  (sleep {poll_interval}s)")
+        time.sleep(poll_interval)
+
+    print("⏱ Release-mode ended: no 2h+ plans found in time window.")
+# =================================================================
+# 7. Main
 # =================================================================
     
 def main():
@@ -463,6 +517,7 @@ def main():
         plans,
         membership_user_id=MEMBERSHIP_USER_ID,
         dry_run=False,
+        min_contig_min=120,
     )
 
 if __name__ == "__main__":
